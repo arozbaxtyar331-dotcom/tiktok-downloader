@@ -268,6 +268,9 @@
             transition: all 0.3s ease;
             font-family: inherit;
             -webkit-tap-highlight-color: transparent;
+            border: none;
+            cursor: pointer;
+            width: 100%;
         }
 
         .download-btn:hover {
@@ -277,14 +280,6 @@
 
         .download-btn:active {
             transform: scale(0.97);
-        }
-
-        .download-btn.ios-btn {
-            background: linear-gradient(135deg, #007aff, #0056cc);
-        }
-
-        .download-btn.ios-btn:hover {
-            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.3);
         }
 
         .new-btn {
@@ -355,35 +350,6 @@
             font-weight: 800;
         }
 
-        /* iOS toast notification */
-        .ios-toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            color: white;
-            padding: 16px 24px;
-            border-radius: 14px;
-            font-size: 0.95rem;
-            font-weight: 500;
-            text-align: center;
-            max-width: 340px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
-            opacity: 0;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            z-index: 1000;
-            pointer-events: none;
-        }
-
-        .ios-toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
         @media (max-width: 600px) {
             .container { padding: 12px; }
             header { padding: 24px 0 20px; }
@@ -396,9 +362,6 @@
     </style>
 </head>
 <body>
-    <!-- iOS Toast -->
-    <div id="ios-toast" class="ios-toast">⬇️ Video ready — tap & hold to save to Files</div>
-
     <div class="container">
         <header>
             <div class="logo">
@@ -441,19 +404,11 @@
                     </div>
                     <div id="video-info" class="video-info"></div>
                     <div class="download-actions">
-                        <!-- iOS: This button triggers the share sheet or downloads to Files -->
-                        <button id="ios-download-btn" class="download-btn ios-btn" onclick="saveToiPhone()">
-                            <span>📁</span> Save to Files
+                        <button id="save-btn" class="download-btn" onclick="saveVideo()">
+                            <span>⬇️</span> Download to Files
                         </button>
-                        <!-- Fallback for desktop -->
-                        <a id="download-link" class="download-btn" download style="display:none;">
-                            <span>⬇️</span> Download Video (No Watermark)
-                        </a>
                         <button class="new-btn" onclick="resetForm()">Download Another Video</button>
                     </div>
-                    <p style="margin-top:12px; font-size:0.8rem; color:#a0a0c0; text-align:center;">
-                        💡 On iPhone: Tap <strong>"Save to Files"</strong> → choose a folder → Save
-                    </p>
                 </div>
             </div>
 
@@ -464,7 +419,7 @@
                         <li>Open TikTok and find the video you want to download</li>
                         <li>Tap <strong>Share</strong> → <strong>Copy Link</strong></li>
                         <li>Paste the link above and click <strong>Download</strong></li>
-                        <li>Tap <strong>Save to Files</strong> → choose folder → Save</li>
+                        <li>Tap <strong>Download to Files</strong> → iOS asks where to save</li>
                     </ol>
                     <p class="small-note">Works with both public and private videos as long as you have access to view them.</p>
                 </div>
@@ -478,7 +433,7 @@
 
     <script>
         // =============================================================
-        // TikTok Video Downloader - Single HTML File
+        // TikTok Video Downloader
         // Developed by AROZ MUSTAFA
         // =============================================================
 
@@ -491,26 +446,15 @@
         const resultCard = document.getElementById('result-card');
         const videoPlayer = document.getElementById('video-player');
         const videoInfo = document.getElementById('video-info');
-        const downloadLink = document.getElementById('download-link');
-        const iosDownloadBtn = document.getElementById('ios-download-btn');
-        const toast = document.getElementById('ios-toast');
+        const saveBtn = document.getElementById('save-btn');
 
-        // Store the current download URL
         var currentDownloadUrl = '';
         var currentFileName = 'tiktok_video.mp4';
 
-        // Detect iOS
-        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-        // ----- Toast notification -----
-        function showToast(msg) {
-            toast.textContent = msg;
-            toast.classList.add('show');
-            clearTimeout(toast._timeout);
-            toast._timeout = setTimeout(function() {
-                toast.classList.remove('show');
-            }, 3500);
+        // ----- Detect iOS -----
+        function isIOS() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         }
 
         // ----- Status helpers -----
@@ -552,10 +496,118 @@
                    /^https?:\/\/m\.tiktok\.com\//i.test(t);
         }
 
-        // ----- Show result -----
+        // =============================================================
+        // KEY FUNCTION: Save video directly via iOS Share Sheet
+        // =============================================================
+        function saveVideo() {
+            if (!currentDownloadUrl) {
+                showStatus('No video loaded. Please download a video first.', 'error');
+                return;
+            }
+
+            saveBtn.textContent = '⏳ Downloading...';
+            saveBtn.disabled = true;
+
+            // Step 1: Fetch the video as a blob
+            fetch(currentDownloadUrl)
+                .then(function(response) {
+                    if (!response.ok) throw new Error('Failed to fetch video');
+                    return response.blob();
+                })
+                .then(function(blob) {
+                    // Step 2: Create a local object URL for the video
+                    var blobUrl = URL.createObjectURL(blob);
+                    
+                    // Step 3: Create a temporary anchor element
+                    var a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = currentFileName;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    
+                    // Step 4: Trigger click
+                    // On iOS Safari, clicking a download link triggers the 
+                    // native Save to Files dialog automatically!
+                    a.click();
+                    
+                    // Step 5: Clean up after a delay
+                    setTimeout(function() {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(blobUrl);
+                    }, 5000);
+                    
+                    saveBtn.innerHTML = '<span>✅</span> Saved!';
+                    setTimeout(function() {
+                        saveBtn.innerHTML = '<span>⬇️</span> Download to Files';
+                        saveBtn.disabled = false;
+                    }, 3000);
+                })
+                .catch(function(err) {
+                    console.error('Download error:', err);
+                    
+                    // Fallback: Open video in a new approach
+                    fallbackSave();
+                });
+        }
+
+        // Fallback if blob method doesn't trigger the share sheet
+        function fallbackSave() {
+            // Create a blob URL from the direct video URL using an XMLHttpRequest
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', currentDownloadUrl, true);
+            xhr.responseType = 'blob';
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    var blob = xhr.response;
+                    var blobUrl = URL.createObjectURL(blob);
+                    
+                    // Create a hidden link and click it
+                    var link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = currentFileName;
+                    link.style.position = 'fixed';
+                    link.style.left = '-9999px';
+                    link.style.top = '-9999px';
+                    document.body.appendChild(link);
+                    link.click();
+                    
+                    setTimeout(function() {
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(blobUrl);
+                    }, 5000);
+                    
+                    saveBtn.innerHTML = '<span>✅</span> Saved!';
+                    setTimeout(function() {
+                        saveBtn.innerHTML = '<span>⬇️</span> Download to Files';
+                        saveBtn.disabled = false;
+                    }, 3000);
+                } else {
+                    // Last resort: open in new window
+                    window.open(currentDownloadUrl, '_blank');
+                    saveBtn.innerHTML = '<span>⬇️</span> Download to Files';
+                    saveBtn.disabled = false;
+                    showStatus('Video opened in new tab. Tap the share button to save to Files.', 'info');
+                }
+            };
+            
+            xhr.onerror = function() {
+                window.open(currentDownloadUrl, '_blank');
+                saveBtn.innerHTML = '<span>⬇️</span> Download to Files';
+                saveBtn.disabled = false;
+                showStatus('Video opened in new tab. Tap the share button to save to Files.', 'info');
+            };
+            
+            xhr.send();
+        }
+
+        // =============================================================
+        // Show result
+        // =============================================================
         function showResult(data) {
             currentDownloadUrl = data.downloadUrl;
-            currentFileName = 'tiktok_' + (data.author || 'video').replace(/[^a-zA-Z0-9]/g, '_') + '.mp4';
+            var safeName = (data.author || 'video').replace(/[^a-zA-Z0-9]/g, '_');
+            currentFileName = 'tiktok_' + safeName + '.mp4';
 
             resultCard.style.display = 'block';
             videoPlayer.src = data.downloadUrl;
@@ -567,174 +619,18 @@
                 (data.duration ? '<div class="video-info-item"><strong>Duration</strong>' + data.duration + '</div>' : '') +
                 '<div class="video-info-item"><strong>Quality</strong>HD (No Watermark)</div>';
 
-            // Desktop fallback link
-            downloadLink.href = data.downloadUrl;
-            downloadLink.setAttribute('download', currentFileName);
-
-            // On iOS, show the "Save to Files" button prominently
-            if (isIOS) {
-                iosDownloadBtn.style.display = 'flex';
-                downloadLink.style.display = 'none';
-            } else {
-                iosDownloadBtn.style.display = 'none';
-                downloadLink.style.display = 'flex';
-            }
-
             resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
             hideStatus();
             setLoading(false);
 
-            // Show toast guidance on iOS
-            if (isIOS) {
-                setTimeout(function() {
-                    showToast('📁 Tap "Save to Files" to save to your iPhone');
-                }, 500);
-            }
+            // Reset save button
+            saveBtn.innerHTML = '<span>⬇️</span> Download to Files';
+            saveBtn.disabled = false;
         }
 
         // =============================================================
-        // iOS SAVE TO FILES - The magic happens here
+        // MAIN PROCESS
         // =============================================================
-        function saveToiPhone() {
-            if (!currentDownloadUrl) {
-                showToast('⚠️ No video loaded yet');
-                return;
-            }
-
-            // Show loading state
-            iosDownloadBtn.textContent = '⏳ Preparing...';
-            iosDownloadBtn.disabled = true;
-
-            // Method 1: Try using the modern showSaveFilePicker (works on some iOS versions)
-            if ('showSaveFilePicker' in window) {
-                try {
-                    fetch(currentDownloadUrl)
-                        .then(function(resp) { return resp.blob(); })
-                        .then(function(blob) {
-                            var fileHandle;
-                            var opts = {
-                                suggestedName: currentFileName,
-                                types: [{
-                                    description: 'Video File',
-                                    accept: { 'video/mp4': ['.mp4'] }
-                                }]
-                            };
-                            return window.showSaveFilePicker(opts);
-                        })
-                        .then(function(handle) {
-                            fileHandle = handle;
-                            return fetch(currentDownloadUrl);
-                        })
-                        .then(function(resp) { return resp.blob(); })
-                        .then(function(blob) {
-                            var writable;
-                            return fileHandle.createWritable().then(function(w) {
-                                writable = w;
-                                return w.write(blob);
-                            }).then(function() {
-                                return writable.close();
-                            });
-                        })
-                        .then(function() {
-                            iosDownloadBtn.textContent = '✅ Saved!';
-                            setTimeout(function() {
-                                iosDownloadBtn.innerHTML = '<span>📁</span> Save to Files';
-                                iosDownloadBtn.disabled = false;
-                            }, 2000);
-                            showToast('✅ Video saved successfully!');
-                            return;
-                        })
-                        .catch(function(err) {
-                            console.warn('File picker failed, trying alternative:', err);
-                            fallbackIOSDownload();
-                        });
-                    return;
-                } catch(e) {
-                    fallbackIOSDownload();
-                }
-            } else {
-                fallbackIOSDownload();
-            }
-        }
-
-        // Fallback for iOS: Open video in new tab → user can long-press to save
-        function fallbackIOSDownload() {
-            iosDownloadBtn.textContent = '📁 Open Video...';
-            iosDownloadBtn.disabled = false;
-
-            // Open video URL in a new tab/window
-            // On iOS Safari, this shows the video and user can long-press to save to Files
-            var videoWindow = window.open('', '_blank');
-            if (videoWindow) {
-                videoWindow.document.write(
-                    '<html><head><title>TikTok Video - Save to Files</title>' +
-                    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-                    '<style>body{margin:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:#fff;font-family:-apple-system,sans-serif;padding:20px;}' +
-                    'video{max-width:100%;max-height:80vh;border-radius:12px;}' +
-                    '.instructions{text-align:center;margin-top:20px;padding:16px;background:rgba(255,255,255,0.1);border-radius:12px;max-width:400px;}' +
-                    'h2{font-size:1.2rem;margin-bottom:8px;}' +
-                    'p{font-size:0.9rem;color:#ccc;line-height:1.5;}' +
-                    '.step{background:#00d68f;color:#000;padding:4px 10px;border-radius:20px;font-weight:700;font-size:0.8rem;display:inline-block;margin:4px;}' +
-                    '</style></head><body>' +
-                    '<video src="' + escapeHtml(currentDownloadUrl) + '" controls autoplay playsinline preload="auto" style="width:100%;">' +
-                    'Your browser does not support video playback.</video>' +
-                    '<div class="instructions">' +
-                    '<h2>📁 Save to iPhone Files</h2>' +
-                    '<p><span class="step">1</span> <strong>Long-press</strong> on the video above</p>' +
-                    '<p><span class="step">2</span> Tap <strong>"Save to Files"</strong> from the menu</p>' +
-                    '<p><span class="step">3</span> Choose a folder → Tap <strong>Save</strong></p>' +
-                    '<p style="margin-top:12px;font-size:0.8rem;opacity:0.7;">⬇️ Video loads below — press & hold to save</p>' +
-                    '</div></body></html>'
-                );
-                showToast('✅ Video opened — long-press it to save to Files');
-            } else {
-                // Popup blocked - try downloading via blob
-                showToast('⏳ One moment...');
-                downloadViaBlob();
-            }
-
-            // Reset button
-            setTimeout(function() {
-                iosDownloadBtn.innerHTML = '<span>📁</span> Save to Files';
-                iosDownloadBtn.disabled = false;
-            }, 1000);
-        }
-
-        // Last resort: download as blob and create local object URL
-        function downloadViaBlob() {
-            fetch(currentDownloadUrl)
-                .then(function(resp) { return resp.blob(); })
-                .then(function(blob) {
-                    var blobUrl = URL.createObjectURL(blob);
-                    // Create a temporary link
-                    var a = document.createElement('a');
-                    a.href = blobUrl;
-                    a.download = currentFileName;
-                    a.style.display = 'none';
-                    document.body.appendChild(a);
-                    
-                    // On iOS this won't auto-download but will show a preview
-                    // User can then use the share sheet
-                    window.open(blobUrl, '_blank');
-                    
-                    setTimeout(function() {
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(blobUrl);
-                    }, 60000);
-                    
-                    showToast('✅ Video loaded — press & hold to save to Files');
-                })
-                .catch(function(err) {
-                    showToast('❌ Failed to load video: ' + err.message);
-                    iosDownloadBtn.innerHTML = '<span>📁</span> Save to Files';
-                    iosDownloadBtn.disabled = false;
-                });
-        }
-
-        // =============================================================
-        // MAIN DOWNLOAD LOGIC
-        // =============================================================
-
         async function processVideo() {
             var videoUrl = urlInput.value.trim();
             if (!videoUrl) {
@@ -753,8 +649,6 @@
             currentDownloadUrl = '';
             setLoading(true);
             showStatus('⏳ Processing your video...', 'info');
-
-            // ---- TRY MULTIPLE FREE APIS ----
 
             // API 1: tikwm.com
             try {
@@ -776,6 +670,8 @@
                         var videoData = json.data;
                         var dlUrl = videoData.play || videoData.wmplay || '';
                         if (dlUrl) {
+                            // Ensure absolute URL
+                            if (dlUrl.startsWith('//')) dlUrl = 'https:' + dlUrl;
                             showResult({
                                 downloadUrl: dlUrl,
                                 title: videoData.title || 'TikTok Video',
@@ -809,7 +705,7 @@
                 }
             } catch (e) { console.warn('godownloader failed:', e.message); }
 
-            // API 3: snaptik alternative (tikmate)
+            // API 3: tikmate
             try {
                 showStatus('⏳ Trying alternative source...', 'info');
                 var resp3 = await fetch(
@@ -833,13 +729,14 @@
             // All failed
             setLoading(false);
             showStatus(
-                '❌ Could not download this video. Try again later or use a different link.\n' +
-                'Free APIs have rate limits — wait a few minutes and retry.',
+                '❌ Could not download this video.\n' +
+                'Free API rate limits may be exceeded. Try again in a few minutes\n' +
+                'or try a different TikTok video link.',
                 'error'
             );
         }
 
-        // ----- Enter key support -----
+        // ----- Enter key -----
         urlInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -847,7 +744,7 @@
             }
         });
 
-        // ----- Reset form -----
+        // ----- Reset -----
         function resetForm() {
             urlInput.value = '';
             resultCard.style.display = 'none';
@@ -855,14 +752,13 @@
             videoInfo.innerHTML = '';
             currentDownloadUrl = '';
             hideStatus();
-            iosDownloadBtn.innerHTML = '<span>📁</span> Save to Files';
-            iosDownloadBtn.disabled = false;
+            saveBtn.innerHTML = '<span>⬇️</span> Download to Files';
+            saveBtn.disabled = false;
             urlInput.focus();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         console.log('TikTok Video Downloader - Developed by AROZ MUSTAFA');
-        console.log('iOS detected:', isIOS);
     </script>
 </body>
 </html>
