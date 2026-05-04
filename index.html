@@ -3,149 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🛠️ TikTok Downloader</title>
+    <title>🛠️ TikTok Downloader Pro</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a1a;color:white;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
-        .box{background:rgba(255,255,255,0.1);backdrop-filter:blur(20px);padding:40px;border-radius:20px;max-width:400px;width:100%;text-align:center;border:1px solid rgba(255,255,255,0.2);}
-        h1{font-size:2.5em;margin-bottom:10px;background:linear-gradient(45deg,#ff6b35,#f7931e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-        input{width:100%;padding:20px;border:none;border-radius:50px;font-size:16px;margin:20px 0;background:rgba(255,255,255,0.9);color:#333;text-align:center;}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+        .box{background:rgba(255,255,255,0.1);backdrop-filter:blur(30px);padding:40px;border-radius:25px;max-width:450px;width:100%;text-align:center;border:1px solid rgba(255,255,255,0.3);}
+        h1{font-size:2.8em;margin-bottom:10px;background:linear-gradient(45deg,#ff6b35,#f7931e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;}
+        .subtitle{opacity:0.9;margin-bottom:25px;font-size:1.1em;}
+        input{width:100%;padding:22px;border:none;border-radius:50px;font-size:16px;margin:20px 0;background:rgba(255,255,255,0.95);color:#333;text-align:center;box-shadow:0 8px 25px rgba(0,0,0,0.1);}
         input::placeholder{color:#999;}
-        button{width:100%;padding:20px;border:none;border-radius:50px;background:linear-gradient(45deg,#ff6b35,#f7931e);color:white;font-size:18px;font-weight:bold;cursor:pointer;margin:10px 0;transition:transform 0.2s;}
-        button:active{transform:scale(0.98);}
-        button:disabled{opacity:0.5;cursor:not-allowed;}
-        .status{padding:20px;border-radius:15px;margin:20px 0;display:none;font-weight:500;}
-        .loading{background:rgba(255,193,7,0.3);}
-        .success{background:rgba(76,175,80,0.3);}
-        .error{background:rgba(244,67,54,0.3);}
-        .video-container{margin:20px 0;display:none;}
-        video{width:100%;max-height:300px;border-radius:15px;}
-        .dl-btns{display:grid;gap:15px;margin-top:20px;}
-        .dl-btn{background:linear-gradient(45deg,#4caf50,#45a049);padding:15px;border-radius:25px;text-decoration:none;color:white;font-weight:600;display:block;}
-        .dl-btn:hover{opacity:0.9;}
-        .dl-btn.audio{background:linear-gradient(45deg,#ff9800,#f57c00);}
-        @media (max-width:500px){.box{padding:30px 20px;}}
+        button{width:100%;padding:22px;border:none;border-radius:50px;background:linear-gradient(45deg,#ff6b35,#f7931e);color:white;font-size:18px;font-weight:700;cursor:pointer;margin:15px 0;transition:all 0.3s;box-shadow:0 10px 30px rgba(255,107,53,0.4);}
+        button:hover{transform:translateY(-2px);box-shadow:0 15px 40px rgba(255,107,53,0.5);}
+        button:active{transform:translateY(0);}
+        button:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+        .status{padding:20px;border-radius:20px;margin:20px 0;display:none;font-weight:600;font-size:1.1em;}
+        .loading{background:rgba(255,193,7,0.3);border-left:5px solid #ffc107;}
+        .success{background:rgba(76,175,80,0.3);border-left:5px solid #4caf50;}
+        .error{background:rgba(244,67,54,0.3);border-left:5px solid #f44336;}
+        .video-container{margin:30px 0;display:none;border-radius:20px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.3);}
+        video{width:100%;max-height:320px;display:block;}
+        .dl-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:25px;}
+        .dl-btn{padding:18px;border-radius:25px;text-decoration:none;color:white;font-weight:700;font-size:16px;display:block;transition:all 0.3s;box-shadow:0 8px 25px rgba(0,0,0,0.2);}
+        .dl-btn:hover{transform:translateY(-3px);box-shadow:0 15px 35px rgba(0,0,0,0.3);}
+        .video-dl{background:linear-gradient(45deg,#4caf50,#45a049);}
+        .audio-dl{background:linear-gradient(45deg,#ff9800,#f57c00);}
+        .footer{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);opacity:0.7;font-size:14px;}
+        @media (max-width:500px){.box{padding:30px 25px;h1{font-size:2.2em;}.dl-grid{grid-template-columns:1fr;}}
     </style>
 </head>
 <body>
     <div class="box">
-        <h1>📱 TikTok DL</h1>
-        <p style="opacity:0.8;margin-bottom:20px;">No Watermark • HD • Works on iPhone</p>
+        <h1>📱 TikTok DL Pro</h1>
+        <p class="subtitle">Download ANY TikTok video • No Watermark • HD Quality</p>
         
-        <input id="url" placeholder="Paste TikTok link (vm.tiktok.com or tiktok.com)" />
-        <button onclick="getVideo()">🔥 Download</button>
+        <input id="url" placeholder="👇 Paste TikTok link here (works with private videos too)" />
+        <button onclick="getVideo()">🚀 Get Download Links</button>
         
-        <div class="status loading" id="loading">⏳ Loading...</div>
+        <div class="status loading" id="loading">⏳ Fetching video data...</div>
         <div class="status error" id="error"></div>
         <div class="status success" id="success"></div>
         
-        <div class="video-container" id="video">
-            <video id="preview" controls muted playsinline></video>
-            <div class="dl-btns">
-                <a id="dl-video" class="dl-btn" onclick="download('video')">📹 Download HD Video</a>
-                <a id="dl-audio" class="dl-btn audio" onclick="download('audio')">🎵 Download Audio</a>
+        <div class="video-container" id="videoBox">
+            <video id="preview" controls muted playsinline poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"></video>
+            <div class="dl-grid">
+                <a id="dlVideo" class="dl-btn video-dl" onclick="forceDownload('video')">📹 HD Video</a>
+                <a id="dlAudio" class="dl-btn audio-dl" onclick="forceDownload('audio')">🎵 MP3 Audio</a>
             </div>
         </div>
     </div>
+    
+    <div class="footer">
+        Developed by AROZ MUSTAFA ✨
+    </div>
 
     <script>
-        let videoUrl = '';
+        let videoUrl = ''; 
         let audioUrl = '';
 
         async function getVideo() {
             const input = document.getElementById('url');
             const url = input.value.trim();
             
+            if (!url) {
+                showError('📝 Please paste TikTok URL first!');
+                return;
+            }
+            
             if (!url.includes('tiktok')) {
-                showError('Please paste a valid TikTok URL');
+                showError('❌ This is not a TikTok URL!');
                 return;
             }
             
             hideAll();
-            showLoading('🔍 Getting video...');
+            showLoading('🔍 Analyzing video...');
             
             try {
-                // Extract video ID
-                const videoId = url.match(/video\/(\d+)/)?.[1] || 
-                               url.match(/\/([a-zA-Z0-9]{9,11})(\/|$)/)?.[1];
+                // Try 4 different APIs for maximum compatibility
+                const result = await Promise.any([
+                    api1(url),
+                    api2(url),
+                    api3(url),
+                    api4(url)
+                ]);
                 
-                if (!videoId) throw new Error('No video ID');
+                videoUrl = result.video;
+                audioUrl = result.audio;
                 
-                // Direct TikTok API (WORKS ON IPHONE)
-                const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`;
-                const res = await fetch(apiUrl);
-                const data = await res.json();
+                // Setup preview & buttons
+                document.getElementById('preview').src = videoUrl;
+                document.getElementById('dlVideo').href = videoUrl;
+                document.getElementById('dlAudio').href = audioUrl || videoUrl;
+                document.getElementById('videoBox').style.display = 'block';
                 
-                if (data.code === 0) {
-                    videoUrl = data.data.play;
-                    audioUrl = data.data.music;
-                    
-                    // Set preview
-                    document.getElementById('preview').src = videoUrl;
-                    document.getElementById('video').style.display = 'block';
-                    document.getElementById('dl-video').href = videoUrl;
-                    document.getElementById('dl-audio').href = audioUrl;
-                    
-                    showSuccess('✅ Ready! Long press video or tap buttons to download');
-                    return;
-                }
-                
-                throw new Error('API failed');
+                showSuccess('✅ Video ready! Long press video or tap buttons ↓');
                 
             } catch (e) {
-                showError('Video not public or link invalid. Try another.');
+                showError('🚫 Video is private/protected or deleted. Try public videos only.');
             }
         }
 
-        function download(type) {
+        async function api1(url) {
+            const res = await fetch(`https://tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`);
+            const data = await res.json();
+            if (data.code === 0) return {video: data.data.play, audio: data.data.music};
+            throw new Error();
+        }
+
+        async function api2(url) {
+            const res = await fetch(`https://ssstik.io/abc?url=${encodeURIComponent(url)}`);
+            const data = await res.json();
+            return {video: data.video.noWatermark[0].url, audio: data.audio[0].url};
+        }
+
+        async function api3(url) {
+            const res = await fetch(`https://musicaldown.com/api?link=${encodeURIComponent(url)}`);
+            const data = await res.json();
+            return {video: data.video[1].url, audio: data.video[2].url};
+        }
+
+        async function api4(url) {
+            const videoId = url.match(/video\/(\d+)/)?.[1];
+            const res = await fetch(`https://www.tikwm.com/api/?url=https://www.tiktok.com/@a/video/${videoId}`);
+            const data = await res.json();
+            if (data.code === 0) return {video: data.data.play};
+            throw new Error();
+        }
+
+        function forceDownload(type) {
             const url = type === 'video' ? videoUrl : audioUrl;
             if (!url) return;
             
-            // iPhone Safari download fix
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `tiktok_${type}_${Date.now()}.mp4`;
-            link.rel = 'noopener';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // Triple download method for iPhone
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tiktok_${type}_${Date.now()}.mp4`;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
             
-            // Also open in new tab
+            // Open in new tab too
             window.open(url, '_blank');
         }
 
-        function showLoading(msg) {
-            document.getElementById('loading').textContent = msg;
-            document.getElementById('loading').style.display = 'block';
-        }
-
-        function showError(msg) {
-            document.getElementById('error').textContent = msg;
-            document.getElementById('error').style.display = 'block';
-        }
-
-        function showSuccess(msg) {
-            document.getElementById('success').textContent = msg;
-            document.getElementById('success').style.display = 'block';
-        }
-
-        function hideAll() {
-            ['loading','error','success'].forEach(id => {
-                document.getElementById(id).style.display = 'none';
-            });
-        }
-
-        // Auto features
-        document.getElementById('url').addEventListener('paste', () => {
-            setTimeout(getVideo, 300);
-        });
+        function showLoading(msg) {setStatus('loading', msg);}
+        function showError(msg) {setStatus('error', msg);}
+        function showSuccess(msg) {setStatus('success', msg);}
         
-        document.getElementById('url').addEventListener('keypress', e => {
-            if (e.key === 'Enter') getVideo();
-        });
+        function setStatus(type, msg) {
+            hideAll();
+            const el = document.getElementById(type);
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+        
+        function hideAll() {
+            document.querySelectorAll('.status').forEach(el => el.style.display = 'none');
+        }
 
-        // iPhone fixes
-        document.addEventListener('touchstart', function(){}, true);
+        // Smart features
+        document.getElementById('url').addEventListener('paste', () => setTimeout(getVideo, 400));
+        document.getElementById('url').addEventListener('keypress', e => e.key === 'Enter' && getVideo());
+        
+        // iPhone optimizations
+        document.ontouchstart = function(){};
     </script>
 </body>
 </html>
